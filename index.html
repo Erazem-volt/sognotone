@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sonotone · Gno.land</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0c0c14;--card:#141420;--card2:#1a1a28;--border:#282840;--border-light:#353550;
+  --text:#eae8f4;--dim:#7a78a0;--dim2:#55536e;
+  --accent:#f0c040;--accent2:#ffd866;--accent-g:#f0c04020;
+  --ok:#3dd896;--ok-g:#3dd89620;
+  --ko:#e8546e;--ko-g:#e8546e20;
+  --r:20px;
+}
+
+body{
+  background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;
+  min-height:100dvh;display:flex;justify-content:center;
+  padding:16px 10px 40px;overflow-x:hidden;user-select:none;
+  background-image:
+    radial-gradient(ellipse at 30% -10%,#f0c04006 0%,transparent 60%),
+    radial-gradient(ellipse at 70% 110%,#3dd89606 0%,transparent 60%);
+}
+
+/* ══════ FRAME ══════ */
+.frame{
+  width:100%;max-width:440px;
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:0 18px 24px;
+  box-shadow:0 12px 48px #0005,inset 0 1px 0 #ffffff08;
+  display:flex;flex-direction:column;align-items:center;
+  position:relative;overflow:hidden;
+}
+.frame::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#ef6b6b,#ee9455,#f2c84a,#5edb80,#52b0f0,#8878f0,#d078f0);
+}
+
+/* ══════ LOGO ══════ */
+.logo{text-align:center;padding:20px 0 6px}
+.logo-icon{font-size:1.6rem;display:block;margin-bottom:2px;filter:drop-shadow(0 0 10px var(--accent-g))}
+.logo h1{
+  font-size:1.7rem;font-weight:900;letter-spacing:-.01em;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.logo .tagline{font-size:.7rem;color:var(--dim);font-weight:700;margin-top:1px}
+
+/* ══════ TIMER ══════ */
+#timer-block{display:none;text-align:center;margin:10px 0 6px;width:100%;position:relative}
+#timer-val{font-family:'JetBrains Mono',monospace;font-size:3rem;font-weight:700;line-height:1}
+#timer-val.ok{color:var(--accent)}
+#timer-val.warn{color:#f08040}
+#timer-val.danger{color:var(--ko);animation:timerPulse .5s ease infinite}
+#timer-lbl{font-size:.55rem;text-transform:uppercase;letter-spacing:.12em;color:var(--dim2);font-weight:700;margin-top:2px}
+.time-bonus{position:fixed;font-family:'JetBrains Mono',monospace;font-weight:700;
+  font-size:1.1rem;color:var(--ok);pointer-events:none;
+  animation:floatUp 1.3s ease-out forwards;z-index:9999}
+
+/* ══════ INSTRUMENTS ══════ */
+#instr-bar{display:flex;gap:6px;justify-content:center;margin:8px 0 12px}
+.ibtn{
+  background:var(--card2);border:2px solid var(--border);border-radius:12px;
+  padding:6px 10px;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:1px;min-width:52px;
+  box-shadow:0 2px 8px #0002}
+.ibtn .ie{font-size:1.2rem;line-height:1}
+.ibtn .il{font-size:.5rem;color:var(--dim2);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.ibtn.active{border-color:var(--accent);box-shadow:0 0 16px var(--accent-g);background:var(--accent-g)}
+.ibtn.active .il{color:var(--accent)}
+.ibtn:active{transform:scale(.93)}
+
+/* ══════ MODE SELECTOR ══════ */
+#mode-bar{display:flex;gap:8px;justify-content:center;margin:0 0 8px}
+.mbtn{
+  background:var(--card2);border:2px solid var(--border);border-radius:12px;
+  padding:6px 14px;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:1px;min-width:80px;
+  box-shadow:0 2px 8px #0002;font-family:'Nunito',sans-serif}
+.mbtn .me{font-size:1.2rem;line-height:1}
+.mbtn .ml{font-size:.5rem;color:var(--dim2);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.mbtn.active{border-color:var(--accent);box-shadow:0 0 16px var(--accent-g);background:var(--accent-g)}
+.mbtn.active .ml{color:var(--accent)}
+.mbtn:active{transform:scale(.93)}
+.mbtn.locked{opacity:.4;pointer-events:none;cursor:default}
+.mbtn .lock-hint{font-size:.43rem;color:var(--dim2);font-weight:700;letter-spacing:.02em;display:none;margin-top:1px;line-height:1.2}
+.mbtn.locked .lock-hint{display:block}
+.mbtn.unlocking{animation:unlockPop .65s ease}
+
+/* ══════ STATS BAR ══════ */
+.stats-bar{
+  display:flex;width:100%;margin-bottom:12px;
+  background:var(--card2);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+}
+.st{flex:1;text-align:center;padding:9px 4px;border-right:1px solid var(--border)}
+.st:last-child{border-right:none}
+.st .l{font-size:.5rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim2);font-weight:800}
+.st .v{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;margin-top:1px}
+.c-ok{color:var(--ok)}.c-ko{color:var(--ko)}.c-ac{color:var(--accent)}
+
+/* ══════ SEQUENCE AREA ══════ */
+.seq-box{
+  background:var(--card2);border:1px solid var(--border);border-radius:14px;
+  padding:10px 14px 12px;width:100%;margin-bottom:10px;text-align:center;
+}
+.seq-box-title{font-size:.55rem;text-transform:uppercase;letter-spacing:.12em;color:var(--dim2);font-weight:800;margin-bottom:6px}
+.seq{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:32px}
+.sq{width:32px;height:32px;border-radius:10px;border:2px solid var(--border);
+  background:var(--bg);display:flex;align-items:center;justify-content:center;
+  font-size:.6rem;font-weight:800;color:var(--dim2);transition:all .3s}
+.sq.heard{border-color:var(--dim);color:var(--text)}
+.sq.filled{border-color:var(--ok);color:var(--ok);background:var(--ok-g)}
+.sq.wrong{border-color:var(--ko);color:var(--ko);background:var(--ko-g);animation:shake .35s}
+.sq.reveal{border-color:var(--ok);color:#fff}
+
+/* ══════ PHASE & FEEDBACK ══════ */
+.phase{font-size:.76rem;color:var(--dim);text-align:center;margin-bottom:8px;min-height:18px;font-weight:700}
+.phase b{color:var(--accent)}
+
+.fb{min-height:36px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;width:100%}
+.fb-msg{padding:6px 18px;border-radius:12px;font-size:.78rem;font-weight:700;animation:fadeIn .2s}
+.fb-msg.ok{background:var(--ok-g);color:var(--ok);border:1.5px solid var(--ok)}
+.fb-msg.ko{background:var(--ko-g);color:var(--ko);border:1.5px solid var(--ko)}
+
+/* ══════ LISTEN BUTTON ══════ */
+.listen-wrap{margin:2px 0 10px;display:flex;justify-content:center}
+.listen-btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:16px;
+  width:90px;height:90px;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  transition:all .3s;box-shadow:0 4px 20px var(--accent-g)}
+.listen-btn .play-icon{font-size:1.5rem;line-height:1;color:var(--bg)}
+.listen-btn .play-label{font-family:'Nunito',sans-serif;font-weight:800;font-size:1.1rem;color:var(--bg)}
+.listen-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-g)}
+.listen-btn:active{transform:scale(.95)}
+.listen-btn.playing{animation:pulse .5s;box-shadow:0 6px 30px var(--accent-g)}
+
+/* ══════ NOTE GRID ══════ */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;width:100%;margin-bottom:8px;align-items:start}
+.note{
+  aspect-ratio:1;border-radius:16px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  border:2.5px solid transparent;position:relative;overflow:hidden;
+  transition:transform .12s,box-shadow .2s;box-shadow:0 4px 14px #0003}
+.note:active{transform:scale(.89)}
+.note .name{font-size:1.2rem;font-weight:900;color:#fff;text-shadow:0 2px 6px #0006}
+.note .sub-n{font-size:.55rem;opacity:.6;color:#fff;font-weight:700}
+
+.note .fill-ring{position:absolute;inset:0;border-radius:14px;border:3px solid #fff;
+  opacity:0;transition:opacity .15s;pointer-events:none}
+.note.pressing .fill-ring{opacity:.8}
+.note.validating{animation:popValid .35s ease}
+
+.note[data-n="C"]{background:linear-gradient(140deg,#ef6b6b,#d84545)}
+.note[data-n="D"]{background:linear-gradient(140deg,#ee9455,#d46e2c)}
+.note[data-n="E"]{background:linear-gradient(140deg,#f2c84a,#d8a825)}
+.note[data-n="F"]{background:linear-gradient(140deg,#5edb80,#3cc05c)}
+.note[data-n="G"]{background:linear-gradient(140deg,#52b0f0,#3090d8)}
+.note[data-n="A"]{background:linear-gradient(140deg,#8878f0,#6458d0)}
+.note[data-n="B"]{background:linear-gradient(140deg,#d078f0,#b055d8)}
+.note.sharp{aspect-ratio:4/3}
+.note.sharp .name{font-size:1rem}
+.note[data-n="C#"]{background:linear-gradient(140deg,#8b3a3a,#6b2a2a)}
+.note[data-n="D#"]{background:linear-gradient(140deg,#8b6a3a,#6b4a2a)}
+.note[data-n="F#"]{background:linear-gradient(140deg,#3a6b4a,#2a5b3a)}
+.note[data-n="G#"]{background:linear-gradient(140deg,#3a5a7a,#2a4a6a)}
+.note[data-n="A#"]{background:linear-gradient(140deg,#5a3a6b,#4a2a5b)}
+
+/* ══════ HINT ══════ */
+.hint{font-size:.64rem;color:var(--dim2);text-align:center;margin-top:2px;line-height:1.4;font-weight:700}
+
+/* ══════ RESULT ══════ */
+.result-wrap{
+  display:flex;justify-content:center;padding:20px 10px;min-height:100dvh;
+  font-family:'Nunito',sans-serif;color:var(--text);background:var(--bg);
+  background-image:radial-gradient(ellipse at 30% -10%,#f0c04006 0%,transparent 60%),
+    radial-gradient(ellipse at 70% 110%,#3dd89606 0%,transparent 60%);
+}
+.result-frame{
+  width:100%;max-width:440px;background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:32px 24px;text-align:center;position:relative;overflow:hidden;
+  box-shadow:0 12px 48px #0005;
+}
+.result-frame::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#ef6b6b,#ee9455,#f2c84a,#5edb80,#52b0f0,#8878f0,#d078f0);
+}
+.result .big{font-family:'JetBrains Mono',monospace;font-size:3.2rem;font-weight:700}
+.result .verd{font-size:1.3rem;font-weight:900;margin:6px 0}
+.result .rsub{color:var(--dim);font-size:.85rem;margin-bottom:24px;line-height:1.6;font-weight:600}
+.rbtn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--bg);
+  border:none;border-radius:14px;padding:13px 30px;
+  font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 16px var(--accent-g)}
+.rbtn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--accent-g)}
+
+/* ══════ ANIMATIONS ══════ */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-70px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes popValid{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes unlockPop{0%{transform:scale(1)}35%{transform:scale(1.18)}65%{transform:scale(.94)}100%{transform:scale(1)}}
+
+@media(max-width:380px){
+  .frame{padding:0 12px 20px}
+  .grid{gap:7px}
+  .note .name{font-size:1.05rem}
+  .logo h1{font-size:1.4rem}
+  #timer-val{font-size:2.4rem}
+}
+
+/* ══════ PSEUDO OVERLAY ══════ */
+#pseudo-overlay{
+  position:fixed;inset:0;background:#0c0c14f0;z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.pseudo-card{
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:32px 24px;text-align:center;max-width:340px;width:100%;
+  box-shadow:0 12px 48px #0008;position:relative;overflow:hidden;
+}
+.pseudo-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#ef6b6b,#ee9455,#f2c84a,#5edb80,#52b0f0,#8878f0,#d078f0);
+}
+.pseudo-card h2{
+  font-size:1.3rem;font-weight:900;margin-bottom:6px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.pseudo-card p{color:var(--dim);font-size:.8rem;margin-bottom:20px;font-weight:600;line-height:1.5}
+#pseudo-input{
+  width:100%;background:var(--card2);border:2px solid var(--border);border-radius:12px;
+  color:var(--text);font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:700;
+  padding:10px 14px;outline:none;text-align:center;
+}
+#pseudo-input:focus{border-color:var(--accent)}
+#pseudo-btn{
+  margin-top:14px;width:100%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:var(--bg);border:none;border-radius:12px;padding:12px;
+  font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;
+  transition:transform .15s;
+}
+#pseudo-btn:active{transform:scale(.96)}
+#pseudo-btn:disabled,#register-btn:disabled{opacity:.5;cursor:default}
+.guest-btn{
+  margin-top:10px;width:100%;background:none;border:1.5px solid var(--border);
+  color:var(--dim);border-radius:12px;padding:10px;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:700;
+}
+.guest-btn:hover{border-color:var(--dim);color:var(--text)}
+#wallet-msg{min-height:1.2em;margin-top:12px;font-size:.75rem;font-weight:700;color:var(--accent)}
+#wallet-msg.err{color:var(--ko)}
+.addr{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--dim2);margin-top:2px;word-break:break-all}
+.hidden{display:none !important}
+
+/* ══════ STOP BTN (end the game early) ══════ */
+#end-btn{
+  position:absolute;top:16px;left:16px;z-index:20;
+  display:none;align-items:center;gap:5px;
+  background:var(--ko-g);color:var(--ko);
+  border:1.5px solid var(--ko);border-radius:10px;
+  padding:5px 10px;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:.7rem;font-weight:800;
+  transition:all .2s}
+#end-btn.visible{display:flex}
+#end-btn:hover{background:var(--ko);color:#fff;box-shadow:0 0 14px var(--ko-g)}
+#end-btn:active{transform:scale(.93)}
+
+/* ══════ TROPHY BTN ══════ */
+#lb-trophy-btn{
+  position:absolute;top:18px;right:18px;
+  background:none;border:none;font-size:1.25rem;cursor:pointer;
+  opacity:.5;transition:opacity .2s;z-index:10;
+}
+#lb-trophy-btn:hover{opacity:1}
+
+/* ══════ LEADERBOARD MODAL ══════ */
+#lb-modal{
+  display:none;position:fixed;inset:0;background:#0c0c14dd;z-index:200;
+  align-items:center;justify-content:center;padding:20px;
+}
+#lb-modal.open{display:flex}
+.lb-card{
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:24px 20px;max-width:380px;width:100%;max-height:90dvh;overflow-y:auto;
+  box-shadow:0 12px 48px #0008;position:relative;overflow:hidden;
+}
+.lb-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#ef6b6b,#ee9455,#f2c84a,#5edb80,#52b0f0,#8878f0,#d078f0);
+}
+.lb-card h3{font-size:1.1rem;font-weight:900;text-align:center;margin-bottom:16px;color:var(--accent)}
+.lb-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--dim);font-size:1.2rem;cursor:pointer;z-index:1}
+.lb-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.lb-tab{
+  flex:1;height:48px;
+  background:var(--card2);border:1px solid var(--border-light);border-radius:12px;
+  padding:0 20px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;
+  color:var(--text);cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px}
+.lb-tab.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-color:transparent;color:var(--bg)}
+.lb-tab:active{transform:scale(.93)}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;margin-bottom:4px}
+.lb-row:nth-child(odd){background:var(--card2)}
+.lb-row.me{border:1.5px solid var(--accent);background:var(--accent-g)}
+.lb-rank{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.85rem;color:var(--dim);min-width:26px;text-align:center}
+.lb-pseudo{flex:1;font-weight:700;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-instr{font-size:.75rem}
+.lb-score{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.9rem;color:var(--ok)}
+</style>
+</head>
+<body>
+
+<div id="pseudo-overlay">
+  <div class="pseudo-card">
+    <span style="font-size:1.8rem;display:block;margin-bottom:10px">🎧</span>
+    <h2>Sonotone</h2>
+
+    <!-- Step 1: connect the wallet -->
+    <div id="step-connect">
+      <p>Connect your <b>Adena</b> wallet to play<br>and save your records on the Gno.land blockchain</p>
+      <button id="pseudo-btn" onclick="onConnectClick()">🔗 Connect my wallet</button>
+      <button class="guest-btn" onclick="playAsGuest()">Play without wallet (score not saved)</button>
+    </div>
+
+    <!-- Step 2: choose a nickname (first time only) -->
+    <div id="step-register" class="hidden">
+      <p>Welcome! Choose your nickname<br>It will be linked to your wallet forever</p>
+      <div class="addr" id="addr-label"></div>
+      <input id="pseudo-input" type="text" maxlength="20" placeholder="Your nickname..." autocomplete="off" style="margin-top:12px">
+      <button id="register-btn" class="rbtn" style="margin-top:14px;width:100%" onclick="onRegisterClick()">Sign up →</button>
+      <p style="font-size:.65rem;margin:10px 0 0">3 to 20 characters: letters without accents, digits, _ and -</p>
+    </div>
+
+    <div id="wallet-msg"></div>
+  </div>
+</div>
+
+<div id="lb-modal">
+  <div class="lb-card">
+    <button class="lb-close" onclick="closeLbModal()">✕</button>
+    <h3>🏆 Leaderboard</h3>
+    <div class="lb-tabs">
+      <button class="lb-tab active" data-lt="classic" onclick="loadLbTab('classic')">🎵 Classic</button>
+      <button class="lb-tab" data-lt="melomane" onclick="loadLbTab('melomane')"><span style="color:#f0c040">𝄞</span> Mélomane</button>
+    </div>
+    <div id="lb-rows"></div>
+  </div>
+</div>
+
+<div class="frame">
+
+  <button id="end-btn" onclick="endGameEarly()" title="End the game now">⏹ Stop</button>
+
+  <div class="logo">
+    <button id="lb-trophy-btn" onclick="openLbModal()" title="Leaderboard">🏆</button>
+    <span class="logo-icon">🎧</span>
+    <h1>Sonotone</h1>
+    <div class="tagline">Short tap = try · Long press = confirm</div>
+  </div>
+
+  <!-- TIMER -->
+  <div id="timer-block">
+    <div id="timer-val" class="ok">60.0</div>
+    <div id="timer-lbl">seconds left</div>
+  </div>
+
+  <!-- MODE -->
+  <div id="mode-bar">
+    <button class="mbtn active" data-m="classic" onclick="selectMode('classic')">
+      <span class="me">🎵</span><span class="ml">Classic</span></button>
+    <button class="mbtn" data-m="melomane" onclick="selectMode('melomane')" id="melomane-btn">
+      <span class="me" style="color:#f0c040;font-style:normal">𝄞</span><span class="ml">Mélomane</span>
+      <span class="lock-hint">🔒 135 pts Classic</span></button>
+  </div>
+
+  <!-- INSTRUMENTS -->
+  <div id="instr-bar">
+    <button class="ibtn active" data-i="piano" onclick="selectInstrument('piano')">
+      <span class="ie">🎹</span><span class="il">Piano</span></button>
+    <button class="ibtn" data-i="bass" onclick="selectInstrument('bass')">
+      <span class="ie">🎸</span><span class="il">Bass</span></button>
+    <button class="ibtn" data-i="guitar" onclick="selectInstrument('guitar')">
+      <span class="ie">🎻</span><span class="il">Guitar</span></button>
+    <button class="ibtn" data-i="organ" onclick="selectInstrument('organ')">
+      <span class="ie">⛪</span><span class="il">Organ</span></button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="st"><div class="l">Level</div><div class="v c-ac" id="lvl">1</div></div>
+    <div class="st"><div class="l">Score</div><div class="v c-ok" id="score">0</div></div>
+    <div class="st"><div class="l">Lives</div><div class="v c-ko" id="lives">♥♥♥</div></div>
+  </div>
+
+  <!-- SEQUENCE -->
+  <div class="seq-box">
+    <div class="seq-box-title">Sequence</div>
+    <div class="seq" id="seq"></div>
+  </div>
+
+  <div class="phase" id="phase"></div>
+  <div class="fb" id="fb"></div>
+
+  <div class="listen-wrap">
+    <button class="listen-btn" id="listenBtn">
+      <span class="play-icon">▶</span>
+      <span class="play-label">PLAY</span>
+    </button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="hint" id="hint">Tap ▶ PLAY to start</div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  GNO.LAND — CONFIGURATION
+// ══════════════════════════════════════
+const GNO = {
+  // Contract v2 deployed under your wallet address
+  realmPath: 'gno.land/r/g18nke2hpu3zue0da9yudzxeugfyxuk3edjj4w79/sonotone2',
+
+  // Onyx testnet (faucet: https://onyx.testnets.gno.land/faucet)
+  rpcUrl:  'https://rpc.onyx.testnets.gno.land',
+  chainId: 'onyx-1',
+  // Mainnet later:
+  // rpcUrl:  'https://rpc.gno.land:443',
+  // chainId: 'gnoland-1',
+
+  appName: 'Sonotone',
+};
+
+const UNLOCK_THRESHOLD = 135;   // Classic points needed to unlock Mélomane (checked by the contract too)
+
+let playerAddress = null;                   // connected wallet (null = guest)
+let playerPseudo  = '';                     // nickname read from the blockchain
+let playerBest    = {classic:0, melomane:0}; // best scores stored on the blockchain
+let melomaneUnlocked = false;               // read from the blockchain
+
+// ══════════════════════════════════════
+//  GNO.LAND — READ (free, no signature)
+// ══════════════════════════════════════
+// Evaluates a realm function that returns text (JSON) and parses it.
+async function gnoRead(expression) {
+  const data = btoa(unescape(encodeURIComponent(GNO.realmPath + '.' + expression)));
+  const res = await fetch(GNO.rpcUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'abci_query',
+      params: { path:'vm/qeval_json', data } }),
+  });
+  const json = await res.json();
+  const base = json?.result?.response?.ResponseBase;
+  if (!base || base.Error) throw new Error(base?.Log || 'cannot read the blockchain');
+  const decoded = JSON.parse(decodeURIComponent(escape(atob(base.Data))));
+  // Shape: {"results":[{"T":…,"V":{"value":"…"}}]} (older versions: a bare array)
+  const results = Array.isArray(decoded) ? decoded : (decoded.results || []);
+  const text = results[0]?.V?.value;
+  if (typeof text !== 'string') {
+    console.error('Unexpected blockchain response:', decoded);
+    throw new Error('Unreadable blockchain response (see console F12)');
+  }
+  return JSON.parse(text);
+}
+
+// Returns {pseudo, address, melomane_unlocked, classic:{score,level_max,instrument}, melomane:{…}} or null
+function getPlayer(address) { return gnoRead(`GetPlayerJSON("${address}")`); }
+
+async function fetchLeaderboard(mode) {
+  const m = mode || currentMode;
+  try { return (await gnoRead(`GetTopJSON("${m}", 10)`)) || []; }
+  catch(e) { console.warn('Leaderboard unavailable', e); return []; }
+}
+
+// ══════════════════════════════════════
+//  GNO.LAND — WRITE (the player signs in Adena)
+// ══════════════════════════════════════
+async function gnoCall(func, args) {
+  const res = await window.adena.DoContract({
+    messages: [{
+      type: '/vm.m_call',
+      value: { caller: playerAddress, send: '', pkg_path: GNO.realmPath,
+               func, args: args.map(String) },
+    }],
+    gasFee: 1000000,     // max fee in ugnot (1 GNOT = 1,000,000 ugnot)
+    gasWanted: 10000000,
+  });
+  if (res.status !== 'success') throw new Error(res.message || 'Transaction rejected');
+  // The transaction may be sent but refused by the chain: look for an error.
+  const d = res.data || {};
+  const err = d.deliverTx?.ResponseBase?.Error || d.deliverTx?.error
+           || d.checkTx?.ResponseBase?.Error || d.checkTx?.error;
+  if (err) {
+    const log = d.deliverTx?.ResponseBase?.Log || d.checkTx?.ResponseBase?.Log || '';
+    throw new Error('Refused by the blockchain: ' + (log || JSON.stringify(err)).slice(0, 200));
+  }
+  return d;
+}
+
+// ══════════════════════════════════════
+//  WELCOME SCREEN: WALLET + NICKNAME
+// ══════════════════════════════════════
+function walletMsg(text, isError) {
+  const el = document.getElementById('wallet-msg');
+  el.textContent = text;
+  el.className = isError ? 'err' : '';
+}
+
+// Waits for the Adena extension to be injected (up to ~3 s).
+async function waitForAdena(ms = 3000) {
+  const start = Date.now();
+  while (!window.adena && Date.now() - start < ms) await wait(100);
+  return !!window.adena;
+}
+
+async function onConnectClick() {
+  const btn = document.getElementById('pseudo-btn');
+  try {
+    btn.disabled = true;
+    if (location.protocol === 'file:') {
+      throw new Error('The page is opened as file://. Start it with Live Server in VS Code (http://127.0.0.1:…).');
+    }
+    walletMsg('Looking for the Adena wallet…');
+    if (!(await waitForAdena())) {
+      throw new Error('Adena not found. Check that the extension is installed and enabled in THIS browser, then reload.');
+    }
+    walletMsg('Connecting…');
+    await window.adena.AddEstablish(GNO.appName);
+    await window.adena.SwitchNetwork(GNO.chainId);
+    const acc = await window.adena.GetAccount();
+    if (acc.status !== 'success') throw new Error(acc.message);
+    playerAddress = acc.data.address;
+    await loadProfile();
+  } catch(e) {
+    walletMsg('❌ ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// If the site is already authorised in Adena (e.g. after "Play Again"),
+// reconnect the player without a click.
+async function tryAutoConnect() {
+  if (location.protocol === 'file:' || !(await waitForAdena())) return;
+  try {
+    const acc = await window.adena.GetAccount();
+    if (acc.status !== 'success' || acc.data.chainId !== GNO.chainId) return;
+    playerAddress = acc.data.address;
+    await loadProfile();
+  } catch(e) { playerAddress = null; walletMsg(''); }
+}
+
+// Copies a blockchain profile into the game state.
+function applyProfile(player) {
+  playerPseudo = player.pseudo;
+  playerBest.classic  = player.classic?.score  || 0;
+  playerBest.melomane = player.melomane?.score || 0;
+  melomaneUnlocked = !!player.melomane_unlocked;
+  applyMeloLockState();
+}
+
+// Reads the connected wallet's profile: start the game, or ask for a nickname.
+async function loadProfile() {
+  walletMsg('Reading your profile…');
+  const player = await getPlayer(playerAddress);
+  if (player) {
+    applyProfile(player);
+    startGameScreen();
+  } else {
+    document.getElementById('step-connect').classList.add('hidden');
+    document.getElementById('step-register').classList.remove('hidden');
+    document.getElementById('addr-label').textContent = playerAddress;
+    document.getElementById('pseudo-input').focus();
+    walletMsg('');
+  }
+}
+
+async function onRegisterClick() {
+  const input = document.getElementById('pseudo-input');
+  const btn = document.getElementById('register-btn');
+  const val = input.value.trim();
+  if (!/^[A-Za-z0-9_-]{3,20}$/.test(val)) {
+    walletMsg('❌ 3 to 20 characters: letters without accents, digits, _ and -', true);
+    input.focus();
+    return;
+  }
+  try {
+    btn.disabled = true;
+    walletMsg('Sign the transaction in Adena…');
+    await gnoCall('Register', [val]);
+
+    // Check that the nickname is really stored on the blockchain
+    walletMsg('Checking on the blockchain…');
+    let player = null;
+    for (let i = 0; i < 5 && !player; i++) {
+      player = await getPlayer(playerAddress);
+      if (!player) await wait(1500);
+    }
+    if (!player) {
+      throw new Error('Sign-up was not recorded by the blockchain. Check your test GNOT balance (faucet) and try again.');
+    }
+    applyProfile(player);
+    startGameScreen();
+  } catch(e) {
+    walletMsg('❌ ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function playAsGuest() {
+  playerAddress = null;
+  playerPseudo = 'Guest';
+  melomaneUnlocked = false;
+  applyMeloLockState();
+  startGameScreen();
+}
+
+function startGameScreen() {
+  document.getElementById('pseudo-overlay').style.display = 'none';
+  initGame();
+}
+
+function applyMeloLockState() {
+  const btn = document.getElementById('melomane-btn');
+  if (!btn) return;
+  btn.classList.toggle('locked', !melomaneUnlocked);
+}
+
+function initGame() {
+  applyMeloLockState();
+  buildGrid(); renderSeq(); updateUI();
+}
+
+// ══════════════════════════════════════
+//  SCORE SUBMISSION (end of game)
+// ══════════════════════════════════════
+// Returns: 'new_record' | 'first' | {status:'not_best', prev} | 'guest' | 'nothing' | 'error'
+// A transaction is sent ONLY for a new record (no fees for a weaker game).
+async function submitScore() {
+  if (!playerAddress) return 'guest';
+  const mode = currentMode;
+  const prev = playerBest[mode] || 0;
+  if (score <= prev) return prev > 0 ? { status: 'not_best', prev } : 'nothing';
+  try {
+    await gnoCall('SubmitScore', [mode, score, seqLen, currentInstrument]);
+    // Check that the record is really stored
+    const player = await getPlayer(playerAddress);
+    if (!player || player[mode]?.score !== score) {
+      console.warn('Score not found on the blockchain', player);
+      return 'error';
+    }
+    applyProfile(player);
+    return prev === 0 ? 'first' : 'new_record';
+  } catch(e) {
+    console.warn('Score submission failed', e);
+    return 'error';
+  }
+}
+
+function instrEmoji(i) {
+  return {piano:'🎹',bass:'🎸',guitar:'🎻',organ:'⛪'}[i] || '';
+}
+
+function renderLbRows(rows, container, myScore) {
+  container.innerHTML = '';
+  if (!rows.length) {
+    container.innerHTML = '<p style="text-align:center;color:var(--dim);font-size:.85rem;padding:12px 0">No scores yet</p>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  rows.forEach((r, i) => {
+    const isMe = playerAddress && r.address === playerAddress;
+    const div = document.createElement('div');
+    div.className = 'lb-row' + (isMe ? ' me' : '');
+    div.innerHTML = `<span class="lb-rank">${medals[i] || (i+1)}</span>
+      <span class="lb-pseudo">${r.pseudo}</span>
+      <span class="lb-instr">${instrEmoji(r.instrument)}</span>
+      <span class="lb-score">${r.score}</span>`;
+    container.appendChild(div);
+  });
+}
+
+async function openLbModal() {
+  document.getElementById('lb-modal').classList.add('open');
+  await loadLbTab(currentMode);
+}
+
+async function loadLbTab(mode) {
+  document.querySelectorAll('.lb-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.lt === mode)
+  );
+  const rows = document.getElementById('lb-rows');
+  rows.innerHTML = '<p style="text-align:center;color:var(--dim);padding:12px 0">Loading...</p>';
+  const data = await fetchLeaderboard(mode);
+  renderLbRows(data, rows, null);
+}
+
+function closeLbModal() {
+  document.getElementById('lb-modal').classList.remove('open');
+}
+
+// ══════════════════════════════════════
+//  TIMER
+// ══════════════════════════════════════
+let timeLeft = 60.0;
+let timerInterval = null;
+let timerStarted = false;
+
+function startTimer() {
+  if (timerStarted) return;
+  timerStarted = true;
+  showQuitBtn();
+  document.getElementById('timer-block').style.display = 'block';
+  refreshTimerDOM();
+  timerInterval = setInterval(() => {
+    timeLeft = Math.max(0, timeLeft - 0.1);
+    refreshTimerDOM();
+    if (timeLeft <= 0) triggerTimerGameOver();
+  }, 100);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function refreshTimerDOM() {
+  const el = document.getElementById('timer-val');
+  if (!el) return;
+  el.textContent = Math.max(0, timeLeft).toFixed(1);
+  el.className = timeLeft > 15 ? 'ok' : timeLeft > 5 ? 'warn' : 'danger';
+}
+
+function addTime(sec) {
+  timeLeft += sec;
+  refreshTimerDOM();
+  const el = document.createElement('div');
+  el.className = 'time-bonus';
+  el.textContent = '+' + sec + 's';
+  const ref = document.getElementById('timer-val');
+  if (ref) {
+    const r = ref.getBoundingClientRect();
+    el.style.left = Math.round(r.right + 8) + 'px';
+    el.style.top  = Math.round(r.top + 10) + 'px';
+  } else { el.style.left = '65%'; el.style.top = '80px'; }
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+}
+
+function triggerTimerGameOver() {
+  stopTimer();
+  phase = 'done';
+  showEnd();
+}
+
+// ══════════════════════════════════════
+//  AUDIO
+// ══════════════════════════════════════
+const AC = new (window.AudioContext||window.webkitAudioContext)();
+const NOTES = [
+  {n:'C',hz:261.63,sol:'C'},
+  {n:'D',hz:293.66,sol:'D'},
+  {n:'E',hz:329.63,sol:'E'},
+  {n:'F',hz:349.23,sol:'F'},
+  {n:'G',hz:392.00,sol:'G'},
+  {n:'A',hz:440.00,sol:'A'},
+  {n:'B',hz:493.88,sol:'B'},
+];
+const NOTES_FULL = [
+  {n:'C', hz:261.63,sol:'C', sharp:false},
+  {n:'C#',hz:277.18,sol:'C#',sharp:true},
+  {n:'D', hz:293.66,sol:'D', sharp:false},
+  {n:'D#',hz:311.13,sol:'D#',sharp:true},
+  {n:'E', hz:329.63,sol:'E', sharp:false},
+  {n:'F', hz:349.23,sol:'F', sharp:false},
+  {n:'F#',hz:369.99,sol:'F#',sharp:true},
+  {n:'G', hz:392.00,sol:'G', sharp:false},
+  {n:'G#',hz:415.30,sol:'G#',sharp:true},
+  {n:'A', hz:440.00,sol:'A', sharp:false},
+  {n:'A#',hz:466.16,sol:'A#',sharp:true},
+  {n:'B', hz:493.88,sol:'B', sharp:false},
+];
+
+let currentMode = 'classic';
+function activeNotes(){ return currentMode==='melomane' ? NOTES_FULL : NOTES; }
+
+function selectMode(mode){
+  if(currentMode===mode) return;
+  if(mode==='melomane' && !melomaneUnlocked) return;
+  ++seqStamp;
+  currentMode=mode;
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('active',b.dataset.m===mode));
+  seqLen=1;sequence=[];userAns=[];cursor=0;lives=3;score=0;best=0;phase='idle';
+  stopTimer();timeLeft=60.0;timerStarted=false;
+  document.getElementById('timer-block').style.display='none';
+  clearFb();buildGrid();renderSeq();updateUI();
+  setPhase('');hintEl.textContent='Tap ▶ PLAY to start';
+  listenBtn.classList.remove('playing');
+  hideQuitBtn();
+}
+
+let currentInstrument = 'piano';
+
+function selectInstrument(name) {
+  currentInstrument = name;
+  document.querySelectorAll('.ibtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.i === name);
+  });
+  if(AC.state==='suspended') AC.resume();
+  tone(329.63, 0.7);
+}
+
+function tone(hz, dur=.45) {
+  if(AC.state==='suspended') AC.resume();
+  switch(currentInstrument) {
+    case 'bass':   toneBass(hz, dur);   break;
+    case 'guitar': toneGuitar(hz, dur); break;
+    case 'organ':  toneOrgan(hz, dur);  break;
+    default:       tonePiano(hz, dur);
+  }
+}
+
+function tonePiano(hz, dur) {
+  const t=AC.currentTime;
+  const o=AC.createOscillator();o.type='sine';o.frequency.value=hz;
+  const o2=AC.createOscillator();o2.type='triangle';o2.frequency.value=hz*2;
+  const g=AC.createGain();g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  const g2=AC.createGain();g2.gain.setValueAtTime(.06,t);g2.gain.exponentialRampToValueAtTime(.001,t+dur*.6);
+  o.connect(g).connect(AC.destination);o2.connect(g2).connect(AC.destination);
+  o.start(t);o.stop(t+dur);o2.start(t);o2.stop(t+dur);
+}
+
+function toneBass(hz, dur) {
+  const f = hz / 2;
+  const t = AC.currentTime;
+  const filter = AC.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = 400;
+  filter.connect(AC.destination);
+  const o1=AC.createOscillator();o1.type='sine';o1.frequency.value=f;
+  const g1=AC.createGain();g1.gain.setValueAtTime(0,t);g1.gain.linearRampToValueAtTime(.4,t+.02);g1.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o1.connect(g1).connect(filter);
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=f/2;
+  const g2=AC.createGain();g2.gain.setValueAtTime(0,t);g2.gain.linearRampToValueAtTime(.2,t+.02);g2.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o2.connect(g2).connect(filter);
+  const o3=AC.createOscillator();o3.type='square';o3.frequency.value=f;
+  const g3=AC.createGain();g3.gain.setValueAtTime(0,t);g3.gain.linearRampToValueAtTime(.04,t+.02);g3.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o3.connect(g3).connect(filter);
+  o1.start(t);o1.stop(t+dur);o2.start(t);o2.stop(t+dur);o3.start(t);o3.stop(t+dur);
+}
+
+function toneGuitar(hz, dur) {
+  const t = AC.currentTime;
+  const filter = AC.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = 1200;
+  filter.connect(AC.destination);
+  const o1=AC.createOscillator();o1.type='sawtooth';o1.frequency.value=hz;
+  const g1=AC.createGain();g1.gain.setValueAtTime(.25,t);g1.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o1.connect(g1).connect(filter);
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=hz;
+  const g2=AC.createGain();g2.gain.setValueAtTime(.15,t);g2.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o2.connect(g2).connect(AC.destination);
+  o1.start(t);o1.stop(t+dur);o2.start(t);o2.stop(t+dur);
+}
+
+function toneOrgan(hz, dur) {
+  const t = AC.currentTime;
+  const end = t + dur;
+  const fo = .05;
+  const o1=AC.createOscillator();o1.type='sine';o1.frequency.value=hz;
+  const g1=AC.createGain();g1.gain.setValueAtTime(.28,t);g1.gain.setValueAtTime(.28,end-fo);g1.gain.exponentialRampToValueAtTime(.001,end);
+  o1.connect(g1).connect(AC.destination);
+  const o2=AC.createOscillator();o2.type='sine';o2.frequency.value=hz*2;
+  const g2=AC.createGain();g2.gain.setValueAtTime(.2,t);g2.gain.setValueAtTime(.2,end-fo);g2.gain.exponentialRampToValueAtTime(.001,end);
+  o2.connect(g2).connect(AC.destination);
+  const o3=AC.createOscillator();o3.type='sine';o3.frequency.value=hz*1.5;
+  const g3=AC.createGain();g3.gain.setValueAtTime(.1,t);g3.gain.setValueAtTime(.1,end-fo);g3.gain.exponentialRampToValueAtTime(.001,end);
+  o3.connect(g3).connect(AC.destination);
+  o1.start(t);o1.stop(end+.1);o2.start(t);o2.stop(end+.1);o3.start(t);o3.stop(end+.1);
+}
+
+function playN(name,dur){const nd=NOTES_FULL.find(x=>x.n===name);if(nd)tone(nd.hz,dur);}
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let seqLen=1, sequence=[], userAns=[], cursor=0;
+let lives=3, score=0, best=0;
+let phase='idle';
+let seqStamp=0; // incremented on quit/mode-change to abort stale async flows
+
+const LONG_PRESS_MS = 500;
+let pressTimer=null, pressTarget=null, isPressing=false;
+
+const seqEl=document.getElementById('seq');
+const phaseEl=document.getElementById('phase');
+const fbEl=document.getElementById('fb');
+const gridEl=document.getElementById('grid');
+const listenBtn=document.getElementById('listenBtn');
+const hintEl=document.getElementById('hint');
+
+function buildGrid(){
+  gridEl.innerHTML='';
+  activeNotes().forEach(nd=>{
+    const div=document.createElement('div');
+    div.className='note'+(nd.sharp?' sharp':'');
+    div.dataset.n=nd.n;
+    const subN=nd.sharp?'':`<span class="sub-n">${nd.n}</span>`;
+    div.innerHTML=`<div class="fill-ring"></div><span class="name">${nd.sol}</span>${subN}`;
+    div.addEventListener('pointerdown',e=>{e.preventDefault();startPress(nd.n,div);});
+    div.addEventListener('pointerup',e=>{e.preventDefault();endPress(nd.n,div);});
+    div.addEventListener('pointerleave',()=>cancelPress(div));
+    div.addEventListener('pointercancel',()=>cancelPress(div));
+    gridEl.appendChild(div);
+  });
+}
+
+function startPress(note,el){
+  if(phase!=='playing'){playN(note,.4);flashEl(el);return;}
+  isPressing=true;pressTarget=note;
+  el.classList.add('pressing');playN(note,.4);flashEl(el);
+  pressTimer=setTimeout(()=>{
+    el.classList.remove('pressing');el.classList.add('validating');
+    setTimeout(()=>el.classList.remove('validating'),350);
+    validateNote(note);isPressing=false;pressTimer=null;
+  }, LONG_PRESS_MS);
+}
+
+function endPress(note,el){
+  el.classList.remove('pressing');
+  if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  isPressing=false;
+}
+
+function cancelPress(el){
+  el.classList.remove('pressing');
+  if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  isPressing=false;
+}
+
+function flashEl(el){el.style.transform='scale(.89)';setTimeout(()=>el.style.transform='',120);}
+
+function genSeq(){
+  const pool=activeNotes();
+  const s=[];
+  for(let i=0;i<seqLen;i++){
+    let pick;do{pick=pool[Math.floor(Math.random()*pool.length)].n;}
+    while(s.length>0&&pick===s[s.length-1]);
+    s.push(pick);
+  }
+  return s;
+}
+
+function renderSeq(){
+  seqEl.innerHTML='';
+  for(let i=0;i<seqLen;i++){
+    const d=document.createElement('div');d.className='sq';d.id='sq'+i;
+    if(phase==='playing'){
+      if(i<cursor){const nd=NOTES_FULL.find(x=>x.n===userAns[i]);d.textContent=nd?nd.sol:'?';d.classList.add('filled');}
+      else if(i===cursor){d.textContent='▸';d.style.borderColor='var(--accent)';d.style.color='var(--accent)';}
+      else{d.textContent='?';}
+    } else {d.textContent='?';}
+    seqEl.appendChild(d);
+  }
+}
+
+function updateUI(){
+  document.getElementById('lvl').textContent=seqLen;
+  document.getElementById('score').textContent=score;
+  document.getElementById('lives').textContent='♥'.repeat(lives)+'♡'.repeat(Math.max(0,3-lives));
+}
+
+function setPhase(t){phaseEl.innerHTML=t;}
+function setFb(cls,t){fbEl.innerHTML=`<div class="fb-msg ${cls}">${t}</div>`;}
+function clearFb(){fbEl.innerHTML='';}
+
+function showQuitBtn(){document.getElementById('end-btn').classList.add('visible');}
+function hideQuitBtn(){document.getElementById('end-btn').classList.remove('visible');}
+
+function quitGame(){
+  ++seqStamp; // cancel any running playSequence / validateNote timeouts
+  stopTimer();
+  if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  isPressing=false;
+  seqLen=1;sequence=[];userAns=[];cursor=0;lives=3;score=0;best=0;
+  phase='idle';timeLeft=60.0;timerStarted=false;
+  document.getElementById('timer-block').style.display='none';
+  clearFb();buildGrid();renderSeq();updateUI();
+  setPhase('');hintEl.textContent='Tap ▶ PLAY to start';
+  listenBtn.classList.remove('playing');
+  hideQuitBtn();
+}
+
+// "⏹ Stop": ends the game now and goes to the end screen (score kept)
+function endGameEarly(){
+  if(!timerStarted) return;
+  if(!confirm('End the game now? Your current score will be kept.')) return;
+  ++seqStamp; // cancel running sequence / answer animations
+  stopTimer();
+  if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+  isPressing=false;
+  phase='done';
+  showEnd();
+}
+
+async function playSequence(){
+  const myStamp=++seqStamp;
+  startTimer();phase='listening';renderSeq();
+  setPhase('🎧 <b>Listen carefully...</b>');clearFb();hintEl.textContent='';
+  listenBtn.classList.add('playing');
+  for(let i=0;i<sequence.length;i++){
+    await wait(150);if(seqStamp!==myStamp)return;
+    const sq=document.getElementById('sq'+i);
+    if(sq){sq.classList.add('heard');sq.textContent='♪';}
+    playN(sequence[i],.45);await wait(480);if(seqStamp!==myStamp)return;
+    if(sq){sq.classList.remove('heard');sq.textContent='?';}
+    await wait(80);if(seqStamp!==myStamp)return;
+  }
+  listenBtn.classList.remove('playing');phase='playing';cursor=0;userAns=[];renderSeq();
+  setPhase('🎹 Try the notes · <b>long press = confirm</b>');
+  hintEl.textContent='Short tap to try, hold to confirm';
+}
+
+function validateNote(note){
+  if(phase!=='playing')return;
+  userAns.push(note);const idx=cursor;const sq=document.getElementById('sq'+idx);
+  if(note===sequence[idx]){
+    if(sq){const nd=NOTES_FULL.find(x=>x.n===note);sq.textContent=nd?nd.sol:'✓';sq.classList.add('filled');}
+    cursor++;renderSeq();
+    for(let i=0;i<cursor;i++){const s=document.getElementById('sq'+i);
+      if(s){const nd=NOTES_FULL.find(x=>x.n===userAns[i]);s.textContent=nd?nd.sol:'✓';s.classList.add('filled');}}
+    if(cursor>=seqLen){
+      phase='done';score+=seqLen*10;addTime(15);
+      if(score>best)best=score;updateUI();
+      setFb('ok',`Nice! +${seqLen*10} pts 🎵`);
+      setPhase('✅ <b>Perfect!</b>');hintEl.textContent='';
+      const winStamp=seqStamp;
+      setTimeout(()=>{if(seqStamp===winStamp){seqLen++;startRound();}},1500);
+    }
+  } else {
+    if(sq){sq.classList.add('wrong');}lives--;updateUI();phase='done';setFb('ko','Wrong!');
+    const errStamp=seqStamp;
+    setTimeout(async()=>{
+      if(seqStamp!==errStamp)return;
+      setPhase('The correct answer:');seqEl.innerHTML='';
+      for(let i=0;i<seqLen;i++){
+        const d=document.createElement('div');d.className='sq reveal';
+        const nd=NOTES_FULL.find(x=>x.n===sequence[i]);d.textContent=nd?nd.sol:'?';
+        d.style.borderColor=getColor(sequence[i]);d.style.background=getColor(sequence[i])+'30';d.style.color='#fff';
+        seqEl.appendChild(d);
+      }
+      await wait(400);if(seqStamp!==errStamp)return;
+      for(let i=0;i<sequence.length;i++){
+        const dots=seqEl.children;if(dots[i])dots[i].style.transform='scale(1.2)';
+        playN(sequence[i],.4);await wait(450);if(seqStamp!==errStamp)return;
+        if(dots[i])dots[i].style.transform='';await wait(80);
+      }
+      if(lives<=0){await wait(600);if(seqStamp===errStamp)showEnd();}
+      else{await wait(800);if(seqStamp===errStamp)startRound();}
+    },800);
+  }
+}
+
+function startRound(){
+  sequence=genSeq();userAns=[];cursor=0;phase='idle';clearFb();renderSeq();updateUI();
+  setPhase(`<b>${seqLen} note${seqLen>1?'s':''}</b> to memorize`);
+  hintEl.textContent='Tap ▶ PLAY to listen';
+  const roundStamp=seqStamp;
+  setTimeout(()=>{if(seqStamp===roundStamp)playSequence();},500);
+}
+
+async function showEnd(){
+  stopTimer();
+  const finalScore = score;
+  const finalLevel = seqLen;
+  const finalMode = currentMode;
+  // Show loading state immediately
+  document.body.innerHTML=`
+  <div class="result-wrap">
+    <div class="result-frame">
+      <span style="font-size:2.2rem;display:block;margin-bottom:6px">🎧</span>
+      <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.6rem;
+        background:linear-gradient(135deg,#f0c040,#ffd866);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        margin-bottom:16px">Sonotone</div>
+      <div class="result">
+        <div class="big" style="color:${finalScore>=50?'#3dd896':'#f0c040'}">${finalScore}</div>
+        <div style="color:#7a78a0;font-size:.78rem;margin-bottom:4px;font-weight:700">points · <b style="color:#eae8f4">${playerPseudo}</b></div>
+        <div class="verd">${finalLevel>=6?'Incredible memory!':finalLevel>=4?'Well done!':finalLevel>=2?'Good start!':'Keep going!'}</div>
+        <div class="rsub">Max level reached : <b>${finalLevel} notes</b></div>
+        <div id="lb-end" style="margin:16px 0 8px;color:var(--dim);font-size:.8rem">${playerAddress && finalScore > (playerBest[finalMode]||0) ? '🔏 New record! Sign the transaction in Adena…' : 'Loading leaderboard…'}</div>
+        <button class="rbtn" onclick="location.reload()">🔄 Play Again</button>
+      </div>
+    </div>
+  </div>`;
+  // Submit, then detect a Mélomane unlock (the contract decides)
+  const wasUnlocked = melomaneUnlocked;
+  const submitResult = await submitScore();
+  const justUnlocked = !wasUnlocked && melomaneUnlocked;
+
+  const rows = await fetchLeaderboard(finalMode);
+  const lbEnd = document.getElementById('lb-end');
+  if (!lbEnd) return;
+
+  // Build status message
+  let statusMsg = '';
+  if (justUnlocked) {
+    statusMsg += '<div style="background:#f0c04018;border:1.5px solid #f0c040;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:800;font-size:.88rem;color:#f0c040">𝄞 Mélomane mode unlocked!</div>';
+  }
+  if (submitResult === 'new_record') {
+    statusMsg += '<div style="color:var(--ok);font-weight:800;font-size:.9rem;margin-bottom:10px">🎉 New record saved on the blockchain!</div>';
+  } else if (submitResult === 'first') {
+    statusMsg += '<div style="color:var(--ok);font-size:.82rem;margin-bottom:10px">⛓️ First score saved on the blockchain!</div>';
+  } else if (submitResult === 'guest') {
+    statusMsg += '<div style="color:var(--dim);font-size:.82rem;margin-bottom:10px">Guest mode: score not saved</div>';
+  } else if (submitResult === 'error') {
+    statusMsg += '<div style="color:var(--ko);font-size:.82rem;margin-bottom:10px">Score not saved (transaction cancelled or failed)</div>';
+  } else if (submitResult && submitResult.status === 'not_best') {
+    statusMsg += `<div style="color:var(--dim);font-size:.82rem;margin-bottom:10px">Your record is still <b style="color:var(--accent)">${submitResult.prev} pts</b></div>`;
+  }
+
+  if (!rows.length) { lbEnd.innerHTML = statusMsg; return; }
+  const medals = ['🥇','🥈','🥉'];
+  const modeLabel = finalMode === 'melomane' ? '𝄞 Mélomane Top 10' : '🏆 Top 10';
+  let html = statusMsg + `<div style="margin-bottom:8px;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim2);font-weight:800">${modeLabel}</div>`;
+  rows.forEach((r, i) => {
+    const isMe = playerAddress && r.address === playerAddress;
+    html += `<div class="lb-row${isMe?' me':''}">
+      <span class="lb-rank">${medals[i]||(i+1)}</span>
+      <span class="lb-pseudo">${r.pseudo}</span>
+      <span class="lb-instr">${instrEmoji(r.instrument)}</span>
+      <span class="lb-score">${r.score}</span>
+    </div>`;
+  });
+  lbEnd.innerHTML = html;
+}
+
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+function getColor(n){
+  const map={
+    C:'#ef6b6b',D:'#ee9455',E:'#f2c84a',F:'#5edb80',G:'#52b0f0',A:'#8878f0',B:'#d078f0',
+    'C#':'#8b3a3a','D#':'#8b6a3a','F#':'#3a6b4a','G#':'#3a5a7a','A#':'#5a3a6b'
+  };
+  return map[n]||'#888';
+}
+
+listenBtn.addEventListener('click',()=>{
+  if(phase==='idle'){sequence=genSeq();playSequence();}
+  else if(phase==='playing'){
+    score=Math.max(0,score-2);updateUI();
+    setFb('ko','▶ Replay: -2 pts');
+    phase='idle';userAns=[];cursor=0;playSequence();
+  }
+});
+
+// Start: Mélomane locked until the blockchain says otherwise,
+// then reconnect automatically if the wallet already authorised the site.
+applyMeloLockState();
+document.getElementById('pseudo-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') onRegisterClick();
+});
+// The Adena extension is sometimes injected a bit after page load.
+window.addEventListener('load', () => setTimeout(tryAutoConnect, 300));
+</script>
+</body>
+</html>

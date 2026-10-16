@@ -6,7 +6,7 @@ la blockchain **Gno.land** (testnet Onyx).
 
 ```
 sonotone/
-├── sonotone-gno.html   ← le jeu complet (anglais, mode Mélomane, bouton PLAY, bouton Stop)
+├── index.html          ← le jeu complet (anglais, mode Mélomane, bouton PLAY, bouton Stop)
 ├── deploy.html         ← page pour déployer le contrat v2 avec Adena
 ├── realm2/
 │   └── sonotone2.gno   ← contrat v2 (2 classements : Classic + Mélomane) — À DÉPLOYER
@@ -48,7 +48,7 @@ sonotone/
 4. Attends que la page du contrat ne soit plus « Not Yet Enabled » (approbation
    automatique d'Onyx, quelques minutes) :
    https://onyx.testnets.gno.land/r/g18nke2hpu3zue0da9yudzxeugfyxuk3edjj4w79/sonotone2
-5. Ouvre `sonotone-gno.html` avec Live Server, connecte ton wallet, réinscris
+5. Ouvre `index.html` avec Live Server, connecte ton wallet, réinscris
    ton pseudo (nouveau contrat = nouveau classement) et joue.
 
 ## ⚠️ Sauvegarde
